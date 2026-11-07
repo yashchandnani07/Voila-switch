@@ -24,11 +24,13 @@ bun install
 cp .env.example .env
 bun run db:migrate
 bun run db:generate
-bun run gst:seed 2025-01
+bun run gst:seed 2026-10
 bun run dev
 ```
 
-Open `http://localhost:3000`. Sign in, then review the seeded January 2025 Close Room.
+Open `http://localhost:3000`. Sign in, then review the seeded October 2026 Close Room
+(Kaveri Precision Components). `bun run gst:eval` scores the matcher; `switch/ROOM-TEST.md`
+walks the Switch room as a real accountant and CA.
 
 The Switch boundary is authenticated with `SWITCH_READ_TOKEN` and `SWITCH_WRITE_TOKEN`.
 Configure Switch agents with:

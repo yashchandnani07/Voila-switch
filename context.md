@@ -5,239 +5,71 @@ Updated: 2026-11-07
 This file is for the next coding agent. Do not put credentials, API keys, database
 passwords, agent keys, or control tokens in this file.
 
-## Product decision
+## Product
 
-Magpie is now a focused GST Close Room, not a general finance workspace.
+Magpie is a focused GST Close Room (target spec: "Magpie × Switch — GST Close Room").
+Magpie/Neon is the deterministic system of record; Switch is the conversation, delegation
+and approval layer. One room per period (e.g. "GST Close — Oct 2026"), five agents, two
+humans (accountant, CA), three human gates (vendor chases, ITC decisions, CA sign-off).
+No automatic filing.
 
-- Magpie/Neon is the deterministic GST system of record.
-- Switch owns conversation, rooms, delegation, agent orchestration, follow-up prompts, and
-  human approval prompts.
-- The product compares a purchase register with GSTR-2B for one monthly period.
-- Every leftover becomes a typed, evidenced exception.
-- ITC decisions are `claim`, `defer`, or `reverse`.
-- Vendor messages require approval.
-- CA approval is required before the GSTR-3B Table 4 CSV export.
-- No automatic GST filing is implemented.
-- Telegram, PDF extraction, cash-flow agents, and unrelated legacy product surfaces are
-  intentionally out of scope.
+## Read first
 
-## Current repository state
+- `switch.md` — roster, wiring, gates, full API table, close logic.
+- `switch/ROOM-TEST.md` — the demo month's stories and the exact messages to test the room.
+- `switch/BUDDY-SETUP.md` — how switch-buddy creates the agents and the room.
+- `UI-connection.md` — browser/UI contract.
 
-The focused cleanup and GST implementation were committed as:
+## Backend map
 
-```text
-b4ae1e7 Document GST UI backend connections
-```
+- `lib/gst/normalize.ts` invoice-number normalization, GSTIN checksum, tax type, rupees.
+- `lib/gst/rules.ts` expense taxonomy and Section 17(5) rules (data, not prompts).
+- `lib/gst/match.ts` exact → GSTIN typo → fuzzy passes; neighbouring-month 2B lines.
+- `lib/gst/intake.ts` purchase-register CSV and GSTR-2B JSON parsers.
+- `lib/gst/close.ts` the workflow service: imports, match, decisions, overrides, follow-ups,
+  sign-off, reopen, queues, audit events. UI server actions and Switch routes both call it.
+- `lib/gst/summary.ts` funnel, ITC at risk, non-filers, Table 4, CA-gated export.
+- `lib/switch/route.ts` shared auth/body/error wrapper for `/api/switch/*`.
+- `switch/magpie.py` the agents' CLI; `switch/prepare_agents.py` writes agent dirs.
+- `scripts/gst-generate.ts`, `gst-seed.ts`, `gst-eval.ts`, `gst-check.ts`.
+- New tables/columns in migration `20261107113257_gst_close_workflow` (`gst_event`, approver,
+  override, period workflow fields).
 
-The commit was pushed to:
+## Switch facts (local install, Core 0.31.0)
 
-```text
-https://github.com/yashchandnani07/magpie-switch
-```
+- Core + gateway API: `http://127.0.0.1:44883` (`/gateway/*` needs the admin cookie from
+  `POST /gateway/auth/login`; credentials live in Switch's `run/switch-core.env`).
+- Console control API (port in `~/.config/switchdash/control-api.json`) only lists local
+  sessions; it cannot create agents or rooms.
+- Managed agents run under the Console agent-controller (provider `antigravity`), started
+  with an empty env, so secrets go in a mode-600 file in the agent directory.
+- Agents must reply with the `post_message` MCP tool; final text is invisible. Never write a
+  literal at-mention in message/instruction text: it wakes that agent.
+- There is no agent-callable business-approval API; approvals are conversational and Magpie
+  enforces `approvedBy`.
+- Old registered-only placeholder agents and the old "GST Close Room" are being replaced by
+  switch-buddy following `switch/BUDDY-SETUP.md`.
 
-The `origin` remote points to `akkki007/magpie`, but pushing there returned GitHub `403`
-because the current credentials do not have write access. The writable remote is named
-`magpie-switch`.
+## Verified on 2026-11-07
 
-The current worktree was clean after the documentation commit. Do not revert the large
-cleanup diff; it is intentional.
+- Neon connectivity works (the earlier P1017 blocker is gone). `.env` DIRECT_URL was
+  repaired (it had two URLs fused); the backup is `.env.bak-claude` and contains an old
+  Supabase password that should be rotated.
+- `gst:check`, `gst:eval` (0 false matches / 3,633), `typecheck`, `lint`, `build` pass.
+- A full close was driven through the CLI: every gate refused correctly, Table 4 reconciled
+  by hand, CA sign-off locked the period, reopen unlocked it. 2026-10 was then re-seeded.
+- Not yet verified: the live Switch room conversation (waiting on agent creation).
 
-## Important documents
+## Chat platform
 
-- `README.md` — product scope and local/production overview.
-- `switch.md` — authoritative Switch architecture, roster, API boundary, and approval
-  gates.
-- `UI-connection.md` — browser, Better Auth, Neon, Switch, API, and database connection
-  contract.
-- `setup-switch.md` — teammate setup instructions for connecting an existing Switch
-  installation.
-- `switch/README.md` — concise Switch-side user flow.
-- `switch/agents/<role>/instructions.md` — checked-in role instructions.
+The room now lives in Slack ("GST Close - Oct 2026 Slack", Slack bridge "Voila", workspace
+connected via the manifest in `switch/slack-app-manifest.json`). Slack cannot render markdown
+tables, so the agent instructions forbid them. The old Mattermost room still exists unused.
+Agent instructions are copied into each Switch agent definition by switch-buddy (the agents do
+not re-read AGENTS.md reliably), so after editing `switch/agents/*`, run
+`python3 switch/prepare_agents.py` and ask switch-buddy to re-apply the five AGENTS.md files.
 
-## Agent roster
+## Conventions
 
-The intended GST Close Room contains exactly:
-
-| Agent | Responsibility |
-|---|---|
-| `finance-coordinator` | Confirms period, delegates specialists, presents next action |
-| `gst-agent` | Explains deterministic purchase-register/GSTR-2B exceptions |
-| `taxonomy-agent` | Reviews Section 17(5) blocked-credit evidence |
-| `vendor-agent` | Drafts and manages approval-gated vendor follow-ups |
-| `reporting-agent` | Produces the period summary and CA-gated Table 4 export |
-
-Old planner, decorator, analyst, generic coordinator, reconciler, and cash-flow roles were
-removed from the repository. Legacy rooms may still exist in a local Switch Console and
-must be archived through Switch, not by editing Console SQLite directly.
-
-## Magpie backend
-
-Main GST code:
-
-- `lib/gst/normalize.ts` — GSTIN validation, invoice normalization, tax-type validation,
-  Section 17(5) detection.
-- `lib/gst/match.ts` — exact and constrained fuzzy matching.
-- `lib/gst/summary.ts` — summary aggregation and filing readiness.
-- `lib/gst/types.ts` — GST domain types.
-- `lib/db.ts` — Prisma 7 driver-adapter client.
-- `prisma/schema.prisma` — GST models plus retained legacy models.
-- `scripts/gst-seed.ts` — seeds the demo period.
-- `scripts/gst-check.ts` — deterministic matcher checks.
-- `scripts/switch-check.ts` — prerequisite checks.
-
-GST tables/models:
-
-```text
-gst_vendor
-gst_purchase_invoice
-gst_gstr2b_line
-gst_exception
-gst_itc_decision
-gst_vendor_followup
-gst_period
-```
-
-The Neon project is `magpie-switch` (`withered-cell-71472584`), database `magpie`, region
-`aws-ap-southeast-1`, with the main branch `br-falling-paper-aosdi6yl`.
-
-The seeded demo period is `2025-01`:
-
-- 200 purchase invoices
-- 200 GSTR-2B lines
-- 12 planted exceptions
-
-Never put the real Neon URL or password into source control or this handoff.
-
-## Protected API
-
-Routes:
-
-```text
-GET  /api/switch/finance?domain=gst&period=YYYY-MM
-GET  /api/switch/gst/exceptions?period=YYYY-MM
-GET  /api/switch/gst/summary?period=YYYY-MM
-GET  /api/switch/gst/summary?period=YYYY-MM&format=csv
-POST /api/switch/gst/decision
-POST /api/switch/gst/followup
-POST /api/switch/gst/summary
-```
-
-Switch requests use:
-
-```http
-Authorization: Bearer <switch token>
-X-Switch-Agent: <agent name>
-```
-
-Read and write tokens are separate. The UI does not use these tokens: it uses Better Auth
-server actions in `app/(app)/gst/actions.ts`, which verify the signed-in user and write
-through Prisma.
-
-Decision writes are idempotent for the same exception and decision. Vendor follow-ups are
-`DRAFT → APPROVED → SENT → RESOLVED`. CSV export is rejected with `409` until the period
-is CA-signed off.
-
-## Switch local access
-
-The last verified local Switch installation used:
-
-```text
-Core health:       http://127.0.0.1:44883/health
-Gateway:           http://127.0.0.1:45545
-Mattermost:        http://127.0.0.1:44601
-Console control:   http://127.0.0.1:33197
-```
-
-These ports are local-installation values, not repository configuration. A teammate may
-have different ports.
-
-Important Switch details discovered:
-
-- Switch Core version was `0.31.0`.
-- The Console control API requires `x-switch-control-token`; it does not use a normal
-  Bearer `Authorization` header.
-- The Console token is local-only at `~/.config/switchdash/control-api.json`.
-- Core agent registration uses a Bearer registration token from the running Core process.
-- `POST /agents` returns an agent ID and agent API key.
-- The required registration integration profile includes connection model, message
-  exchange, pre/post invocation mediation, and event reporting.
-- Agent events are delivered as an SSE stream at
-  `/agents/{agent_id}/events`.
-- The stream requires connection heartbeats at
-  `/agents/{agent_id}/connection/beat`; without them the agent is evicted with
-  `heartbeat_lapsed`.
-- A live room was created during the previous session as `GST Close Room`, but its exact
-  ID is local state and must be queried on the current Switch installation.
-
-Use `setup-switch.md` for the step-by-step teammate setup. Do not hardcode old room IDs,
-agent IDs, or API keys.
-
-## What is verified
-
-Repository checks that passed:
-
-```bash
-bun run gst:check
-bun run switch:check
-bun run typecheck
-bun run build
-git diff --check
-```
-
-The root route redirects to `/gst`. Unauthenticated `/gst` redirects to
-`/sign-in?next=/gst`.
-
-Neon server-side inspection confirmed:
-
-- GST migration `20261107102313_gst_close_room` is applied.
-- 200 purchase invoices, 200 GSTR-2B lines, and 12 exceptions exist for the demo period.
-
-## Current blocker
-
-The last local Next.js API verification still returned HTTP 500/P1017:
-
-```text
-Server has closed the connection.
-```
-
-Direct and pooled local PostgreSQL connections to Neon timed out or reset, even after
-restarting the Neon compute and refreshing the `magpie_owner` password. Neon server-side
-SQL access worked and confirmed the schema/data, so this is currently an external/local
-PostgreSQL connectivity problem rather than missing migrations or missing tables.
-
-Before declaring the live product complete:
-
-1. Verify the teammate's laptop can reach the current Neon endpoint over PostgreSQL.
-2. Test a fresh `pg` connection using the local `.env`.
-3. Restart Magpie only after the database connection succeeds.
-4. Re-test `/api/switch/gst/summary` and `/api/switch/gst/exceptions`.
-5. Run a real Switch agent runtime that consumes SSE events, sends heartbeats, and posts
-   responses.
-6. Verify one complete room conversation and one approval path.
-
-Do not mask this with fake API data or a success-shaped fallback.
-
-## Next agent workflow
-
-Start by reading:
-
-```text
-README.md
-switch.md
-UI-connection.md
-setup-switch.md
-lib/db.ts
-app/api/switch/gst/
-```
-
-Then inspect the current processes and environment without printing secrets. Run:
-
-```bash
-bun run gst:check
-bun run switch:check
-git status --short
-```
-
-Use the Neon tools or a safe direct connection test to diagnose the database blocker.
-Keep credentials local, do not add co-author trailers to commits, and push to the
-`magpie-switch` remote when a GitHub update is requested.
+Keep credentials local. Push to the `magpie-switch` remote when a GitHub update is
+requested (`origin` returns 403).

@@ -1,5 +1,8 @@
 # UI ↔ Backend Connection Contract
 
+The complete Switch API table, approval gates and the `approvedBy` rule are in
+[`switch.md`](switch.md); this file covers the browser side and example payloads.
+
 This document describes the backend connections required by the GST Close Room UI. It
 does not define visual design or layout.
 
@@ -90,7 +93,7 @@ Returns:
 ```json
 {
   "ok": true,
-  "period": "2025-01",
+  "period": "2026-10",
   "source": {
     "purchaseInvoices": 200,
     "gstr2bLines": 200
@@ -156,8 +159,9 @@ Content-Type: application/json
 {
   "exceptionId": "<exception UUID>",
   "decision": "claim",
-  "scope": "2025-01 GST Close Room",
-  "note": "Evidence reviewed by accountant"
+  "scope": "2026-10 GST Close Room",
+  "note": "Evidence reviewed by accountant",
+  "approvedBy": "Priya (Accountant)"
 }
 ```
 
@@ -178,7 +182,7 @@ Content-Type: application/json
 
 {
   "vendorId": "<vendor UUID>",
-  "period": "2025-01",
+  "period": "2026-10",
   "draft": "Please confirm the following invoice details.",
   "action": "draft"
 }
@@ -203,8 +207,9 @@ X-Switch-Agent: reporting-agent
 Content-Type: application/json
 
 {
-  "period": "2025-01",
-  "action": "ca_approve"
+  "period": "2026-10",
+  "action": "ca_approve",
+  "approvedBy": "CA Rakesh Mehta"
 }
 ```
 
@@ -258,7 +263,7 @@ Run the checked-in Prisma migrations before serving the UI:
 ```bash
 bun run db:migrate
 bun run db:generate
-bun run gst:seed 2025-01
+bun run gst:seed 2026-10
 ```
 
 ## Connection verification
@@ -277,7 +282,7 @@ Then verify the protected API from the Switch network:
 ```bash
 curl -H "Authorization: Bearer $SWITCH_READ_TOKEN" \
   -H "X-Switch-Agent: gst-coordinator" \
-  "$MAGPIE_API_URL/api/switch/gst/summary?period=2025-01"
+  "$MAGPIE_API_URL/api/switch/gst/summary?period=2026-10"
 ```
 
 The response must be JSON with `"ok": true`. If Neon is unreachable, the UI and Switch
