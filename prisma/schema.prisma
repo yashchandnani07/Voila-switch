@@ -335,9 +335,19 @@ model PurchaseInvoice {
   cgstPaise           Int            @default(0)
   sgstPaise           Int            @default(0)
   igstPaise           Int            @default(0)
+  cessPaise           Int            @default(0)
   hsn                 String?
   category            String?
+  placeOfSupply       String?
   source              String         @default("purchase_register")
+  /// Deterministic taxonomy: expense class and the Section 17(5) clause that blocks it, if any.
+  expenseClass        String?
+  blockedClause       String?
+  /// A human-approved override of the blocked-credit flag. Never set without `overrideApprovedBy`.
+  blockedOverride     Boolean        @default(false)
+  overrideReason      String?
+  overrideApprovedBy  String?
+  overrideAt          DateTime?
   createdAt           DateTime       @default(now())
   vendor              Vendor         @relation(fields: [vendorId], references: [id], onDelete: Cascade)
   exceptions          GstException[]
@@ -350,6 +360,9 @@ model PurchaseInvoice {
 model Gstr2bLine {
   id                  String         @id @default(uuid())
   supplierGstin       String
+  supplierName        String?
+  supplierFiledOn     String?
+  itcAvailable        Boolean        @default(true)
   invoiceNo           String
   normalizedInvoiceNo String
   invoiceDate         DateTime       @db.Date
@@ -358,6 +371,7 @@ model Gstr2bLine {
   cgstPaise           Int            @default(0)
   sgstPaise           Int            @default(0)
   igstPaise           Int            @default(0)
+  cessPaise           Int            @default(0)
   createdAt           DateTime       @default(now())
   exceptions          GstException[]
 
@@ -393,6 +407,8 @@ model ItcDecision {
   exceptionId String
   decision    GstItcDecision
   actor       String
+  /// The human who approved the decision in the Switch room or signed in to the UI.
+  approvedBy  String?
   scope       String
   note        String?
   createdAt   DateTime       @default(now())
@@ -408,9 +424,15 @@ model VendorFollowup {
   period     String
   draft      String
   status     VendorFollowupStatus @default(DRAFT)
+  draftedBy  String?
   approvedBy String?
+  approvedAt DateTime?
   sentAt     DateTime?
+  sentVia    String?
   resolvedAt DateTime?
+  resolution String?
+  /// Invoice numbers the message asks about, captured when the draft was written.
+  invoiceRefs Json?
   createdAt  DateTime             @default(now())
   updatedAt  DateTime             @updatedAt
   vendor     Vendor               @relation(fields: [vendorId], references: [id], onDelete: Cascade)
@@ -424,12 +446,36 @@ model GstPeriod {
   id          String          @id @default(uuid())
   period      String          @unique
   status      GstPeriodStatus @default(OPEN)
+  /// The registered business closing this period; the state code decides IGST vs CGST+SGST.
+  recipientGstin String?
+  businessName   String?
+  matchStats     Json?
+  matchedAt      DateTime?
+  signoffRequestedBy String?
+  signoffRequestedAt DateTime?
   signedOffBy String?
   signedOffAt DateTime?
+  /// The Switch agent (or UI) that recorded the CA's approval.
+  signoffRecordedBy String?
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
 
   @@map("gst_period")
+}
+
+/// Append-only audit trail for the Close Room: every import, match run, decision,
+/// follow-up transition and sign-off, with the agent and the approving human.
+model GstEvent {
+  id         String   @id @default(uuid())
+  period     String
+  kind       String
+  actor      String
+  approvedBy String?
+  detail     Json
+  createdAt  DateTime @default(now())
+
+  @@index([period, createdAt])
+  @@map("gst_event")
 }
 
 model Model {
