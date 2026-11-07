@@ -34,7 +34,7 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
  */
 function safeNext(next: FormDataEntryValue | null): string {
   const value = typeof next === "string" ? next : "";
-  return value.startsWith("/") && !value.startsWith("//") ? value : "/workspace";
+  return value.startsWith("/") && !value.startsWith("//") ? value : "/gst";
 }
 
 function readField(formData: FormData, name: string): string {

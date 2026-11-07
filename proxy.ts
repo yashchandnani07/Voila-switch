@@ -13,16 +13,21 @@ import { getSessionCookie } from "better-auth/cookies";
  * the page itself, which is the check that actually counts. Nothing may rely
  * on this layer alone — see docs/auth-plan.md §4.
  */
-const PROTECTED = ["/workspace"];
+const PROTECTED = ["/gst"];
 const AUTH_PAGES = ["/sign-in", "/sign-in/link", "/sign-up"];
 // The marketing page is for someone deciding whether to sign up; a returning, signed-in
-// visitor gets no value from reading it again, so they skip straight to `/workspace` —
+// visitor gets no value from reading it again, so they skip straight to `/gst` —
 // the same redirect AUTH_PAGES already gets, just one more path added to it.
 const SIGNED_IN_SKIPS = [...AUTH_PAGES, "/"];
 
 export default function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const hasSessionCookie = getSessionCookie(request) !== null;
+
+  if (process.env.DEMO_OPEN === "1") {
+    // Demo mode: no login. The page itself supplies the demo accountant.
+    return pathname === "/" || AUTH_PAGES.includes(pathname) ? NextResponse.redirect(new URL("/gst", request.nextUrl)) : NextResponse.next();
+  }
 
   if (!hasSessionCookie && PROTECTED.some((p) => pathname.startsWith(p))) {
     const url = new URL("/sign-in", request.nextUrl);
@@ -32,7 +37,7 @@ export default function proxy(request: NextRequest) {
   }
 
   if (hasSessionCookie && SIGNED_IN_SKIPS.includes(pathname)) {
-    return NextResponse.redirect(new URL("/workspace", request.nextUrl));
+    return NextResponse.redirect(new URL("/gst", request.nextUrl));
   }
 
   return NextResponse.next();
