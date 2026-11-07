@@ -8,6 +8,43 @@
    This file is the ONLY place a hex value may appear.
    ───────────────────────────────────────────────────────────────────────── */
 
+/* ─────────────────────────────────────────────────────────────────────────
+   Console tokens: the dense, light "product console" look used by /gst.
+   Warm-grey sidebar, 1px hairlines, one blue for the primary action, soft tinted
+   status pills, segmented usage bars, syntax-coloured code boxes.
+   ───────────────────────────────────────────────────────────────────────── */
+@theme {
+  --color-c-canvas: #ffffff;
+  --color-c-side: #f7f7f5;
+  --color-c-hover: #efefec;
+  --color-c-line: #e8e8e5;
+  --color-c-line-2: #d9d9d5;
+  --color-c-ink: #171717;
+  --color-c-ink-2: #5f5f5c;
+  --color-c-ink-3: #92928e;
+  --color-c-blue: #3b6ef5;
+  --color-c-blue-hover: #2f5ee0;
+  --color-c-blue-bg: #e8eeff;
+  --color-c-blue-ink: #2a54c9;
+  --color-c-green: #1d7a3b;
+  --color-c-green-bg: #e3f4e7;
+  --color-c-orange: #b25209;
+  --color-c-orange-bg: #fdeadb;
+  --color-c-red: #c4302b;
+  --color-c-red-bg: #fde4e2;
+  --color-c-bar-off: #e7e7e4;
+  --color-c-bar-blue: #3b6ef5;
+  --color-c-bar-orange: #f08a24;
+  --color-c-bar-red: #e5484d;
+  --color-c-bar-green: #2fa05a;
+  --color-c-code: #fafaf9;
+  --color-c-tok-str: #1a7f37;
+  --color-c-tok-key: #0550ae;
+  --color-c-tok-com: #8b949e;
+  --color-c-tok-num: #b35900;
+  --color-c-scrim: rgb(23 23 23 / 38%);
+}
+
 @theme {
   /* Neutrals */
   --color-app: #f8f8fa;

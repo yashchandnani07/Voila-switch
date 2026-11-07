@@ -33,13 +33,13 @@ const hinato = localFont({
 export const metadata: Metadata = {
   metadataBase: new URL("https://magpie.app"),
   title: {
-    default: "Magpie — GST Close Room",
-    template: "%s · Magpie",
+    default: "Voila — GST Close Room",
+    template: "%s · Voila",
   },
   description:
     "A deterministic monthly GST close room for purchase-register and GSTR-2B review.",
   openGraph: {
-    title: "Magpie — GST Close Room",
+    title: "Voila — GST Close Room",
     description: "Close GST periods with deterministic matching and human approvals.",
     type: "website",
   },
