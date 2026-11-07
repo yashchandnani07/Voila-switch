@@ -5,6 +5,7 @@ export type GstTax = {
   cgstPaise: Paise;
   sgstPaise: Paise;
   igstPaise: Paise;
+  cessPaise?: Paise;
 };
 
 export type PurchaseInvoiceInput = GstTax & {
@@ -17,6 +18,8 @@ export type PurchaseInvoiceInput = GstTax & {
   period: string;
   hsn?: string;
   category?: string;
+  /** Section 17(5) clause, already decided by the taxonomy pass (and not overridden). */
+  blockedClause?: string | null;
 };
 
 export type Gstr2bLineInput = GstTax & {
@@ -37,10 +40,13 @@ export type GstExceptionType =
   | "INVALID_GSTIN"
   | "TAX_TYPE_MISMATCH";
 
+export type MatchTier = "exact" | "fuzzy";
+
 export type GstMatch = {
   purchaseInvoiceId?: string;
   gstr2bLineId?: string;
   type: "MATCHED" | "EXCEPTION";
+  tier?: MatchTier;
   exceptionType?: GstExceptionType;
   stableId: string;
   amountPaise: Paise;
@@ -53,7 +59,10 @@ export type GstRun = {
     purchaseInvoices: number;
     gstr2bLines: number;
     matched: number;
+    matchedExact: number;
+    matchedFuzzy: number;
     exceptions: number;
+    byType: Partial<Record<GstExceptionType, number>>;
     falseMatchSafe: boolean;
   };
 };
