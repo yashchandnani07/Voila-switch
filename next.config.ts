@@ -13,7 +13,7 @@ const nextConfig: NextConfig = {
    * Harmless locally: `bun run dev` and `bun run build && bun run start` both ignore this and
    * use the normal `.next` output. It only changes what `next build` additionally emits.
    */
-  output: "standalone",
+  output: process.env.VERCEL ? undefined : "standalone",
 
   /**
    * Server-only packages Next must `require` rather than bundle.
