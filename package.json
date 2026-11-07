@@ -27,6 +27,7 @@
     "recon:ingest": "bun run scripts/recon-ingest.ts",
     "recon:match": "bun run scripts/recon-match.ts",
     "recon:eval": "bun run scripts/recon-eval.ts",
+    "switch:check": "bun run scripts/switch-check.ts",
     "recon:agent": "bun run scripts/recon-agent.ts",
     "recon:ablate": "bun run scripts/recon-ablate.ts",
     "recon:s3": "bun run scripts/recon-s3.ts"

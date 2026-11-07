@@ -11,6 +11,7 @@ import { readRunReport } from "@/lib/recon/report";
 import { archiveEnabled } from "@/lib/recon/s3";
 import { getSession } from "@/lib/session";
 import { initialsOf } from "@/lib/initials";
+import { financeSnapshot } from "@/lib/switch/finance";
 
 export const metadata: Metadata = { title: "Reconciliation" };
 
@@ -38,7 +39,46 @@ export default async function ReconPage() {
       <Suspense fallback={<Loading />}>
         <Report />
       </Suspense>
+      <Suspense fallback={null}>
+        <SwitchStatus />
+      </Suspense>
     </AppShell>
+  );
+}
+
+async function SwitchStatus() {
+  await connection();
+  const snapshot = await financeSnapshot("overview");
+  const capabilities = snapshot.capabilities ?? {};
+
+  return (
+    <section className="mx-auto mt-6 w-full max-w-5xl rounded-control border border-line bg-subtle px-4 py-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <p className="text-[13px] font-medium text-ink">Switch finance sync</p>
+          <p className="mt-0.5 text-[12px] text-ink-muted">
+            Magpie is the source of truth; Switch delegates conversations and approvals.
+          </p>
+        </div>
+        <p className="text-[11px] text-ink-muted">
+          {snapshot.generatedAt ? `Report ${new Date(snapshot.generatedAt).toLocaleString()}` : "No report yet"}
+        </p>
+      </div>
+      <div className="mt-3 flex flex-wrap gap-2">
+        {Object.entries(capabilities).map(([name, ready]) => (
+          <span
+            key={name}
+            className={`rounded-full border px-2 py-1 text-[11px] ${
+              ready
+                ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+                : "border-line bg-white text-ink-muted"
+            }`}
+          >
+            {name}: {ready ? "ready" : "source needed"}
+          </span>
+        ))}
+      </div>
+    </section>
   );
 }
 

@@ -239,6 +239,11 @@ enum ChangeSetStatus {
   REJECTED
 }
 
+enum SwitchDecisionStatus {
+  ACCEPTED
+  REJECTED
+}
+
 /// Adding a command type is a migration on purpose: §1.3's list is meant to be
 /// short, and a new mutation is a decision, not an implementation detail.
 enum CommandType {
@@ -251,6 +256,19 @@ enum CommandType {
   RenameScenario
   DeleteScenario
   SetOverride
+}
+
+model SwitchReconciliationDecision {
+  id         String               @id @default(uuid())
+  exceptionId String
+  status     SwitchDecisionStatus
+  scope      String
+  actor      String
+  note       String?
+  createdAt  DateTime             @default(now())
+
+  @@index([exceptionId, createdAt])
+  @@map("switch_reconciliation_decision")
 }
 
 model Model {
