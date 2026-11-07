@@ -1,0 +1,206 @@
+{
+  "display_information": {
+    "name": "Voila"
+  },
+  "features": {
+    "app_home": {
+      "home_tab_enabled": true,
+      "messages_tab_enabled": false,
+      "messages_tab_read_only_enabled": false
+    },
+    "bot_user": {
+      "display_name": "Voila",
+      "always_online": false
+    },
+    "agent_view": {
+      "agent_description": "Switch agents. Mention one by name in a channel and it answers there; its progress appears on the message while it works."
+    },
+    "slash_commands": [
+      {
+        "command": "/help",
+        "description": "Show this list of commands",
+        "should_escape": false
+      },
+      {
+        "command": "/reset",
+        "description": "Reset a targeted agent's session (clears context, then reconnects)",
+        "should_escape": true,
+        "usage_hint": "<target>"
+      },
+      {
+        "command": "/reset-all-agents",
+        "description": "Reset EVERY agent's session in this room (clears context, then reconnects each)",
+        "should_escape": false
+      },
+      {
+        "command": "/compact",
+        "description": "Compact a targeted agent's session context",
+        "should_escape": true,
+        "usage_hint": "<target>"
+      },
+      {
+        "command": "/compact-all-agents",
+        "description": "Compact EVERY agent's session context in this room",
+        "should_escape": false
+      },
+      {
+        "command": "/interrupt",
+        "description": "Interrupt a targeted agent's current turn",
+        "should_escape": true,
+        "usage_hint": "<target>"
+      },
+      {
+        "command": "/interrupt-all-agents",
+        "description": "Interrupt EVERY agent's current turn in this room",
+        "should_escape": false
+      },
+      {
+        "command": "/list-agents",
+        "description": "List agents in this room",
+        "should_escape": false
+      },
+      {
+        "command": "/agents-status",
+        "description": "Show each agent's presence status and capabilities in this room",
+        "should_escape": false
+      },
+      {
+        "command": "/roles",
+        "description": "List this room's roles and who currently holds each",
+        "should_escape": false
+      },
+      {
+        "command": "/list-documents",
+        "description": "List the room's internal documents",
+        "should_escape": false
+      },
+      {
+        "command": "/list-references",
+        "description": "List the room's references",
+        "should_escape": false
+      },
+      {
+        "command": "/list-aliases",
+        "description": "List per-room agent aliases (`@alias` \u2192 agent)",
+        "should_escape": false
+      },
+      {
+        "command": "/follow-ups",
+        "description": "Turn follow-ups on or off for this room: whether a reply in an agent's thread, or the next message\u2026",
+        "should_escape": true,
+        "usage_hint": "<state>"
+      },
+      {
+        "command": "/assign-agent",
+        "description": "Send every message in this room to one agent, unless it mentions someone else",
+        "should_escape": true,
+        "usage_hint": "<agent>"
+      },
+      {
+        "command": "/unassign-agent",
+        "description": "Stop sending every message in this room to the assigned agent",
+        "should_escape": false
+      },
+      {
+        "command": "/set-alias",
+        "description": "Give an agent a room alias",
+        "should_escape": true,
+        "usage_hint": "<agent> <alias>"
+      },
+      {
+        "command": "/remove-alias",
+        "description": "Remove a room alias",
+        "should_escape": true,
+        "usage_hint": "<alias>"
+      },
+      {
+        "command": "/invite-agent",
+        "description": "Add an existing agent to this room",
+        "should_escape": true,
+        "usage_hint": "<agent>"
+      },
+      {
+        "command": "/remove-agent",
+        "description": "Remove an agent from this room",
+        "should_escape": true,
+        "usage_hint": "<agent>"
+      },
+      {
+        "command": "/rename-agent",
+        "description": "Rename an agent, and its display name with it",
+        "should_escape": true,
+        "usage_hint": "<agent> <new_name> <display_name>"
+      },
+      {
+        "command": "/delete-agent",
+        "description": "Delete an agent everywhere, after a confirmation",
+        "should_escape": true,
+        "usage_hint": "<agent> <confirm>"
+      },
+      {
+        "command": "/room-url",
+        "description": "Show the frontend URL for this room",
+        "should_escape": false
+      },
+      {
+        "command": "/list-switch-agents",
+        "description": "List all agents registered on the Switch",
+        "should_escape": false
+      },
+      {
+        "command": "/agents-greet",
+        "description": "Have agents in the room introduce themselves",
+        "should_escape": false
+      },
+      {
+        "command": "/run-cmd",
+        "description": "Show the terminal command to start a session for an agent",
+        "should_escape": true,
+        "usage_hint": "<agent> <role>"
+      }
+    ]
+  },
+  "oauth_config": {
+    "scopes": {
+      "bot": [
+        "files:read",
+        "files:write",
+        "assistant:write",
+        "channels:history",
+        "channels:manage",
+        "channels:read",
+        "chat:write",
+        "chat:write.customize",
+        "commands",
+        "groups:history",
+        "groups:read",
+        "groups:write",
+        "im:history",
+        "im:read",
+        "im:write",
+        "mpim:history",
+        "reactions:read",
+        "reactions:write",
+        "users:read",
+        "usergroups:read",
+        "usergroups:write"
+      ]
+    }
+  },
+  "settings": {
+    "event_subscriptions": {
+      "bot_events": [
+        "message.channels",
+        "message.groups",
+        "message.im",
+        "message.mpim"
+      ]
+    },
+    "interactivity": {
+      "is_enabled": true
+    },
+    "org_deploy_enabled": true,
+    "socket_mode_enabled": true,
+    "token_rotation_enabled": false
+  }
+}

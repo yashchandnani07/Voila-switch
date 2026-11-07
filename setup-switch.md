@@ -19,7 +19,7 @@ tokens. Do not commit `.env` or paste its secrets into Switch messages.
 ```bash
 bun run db:migrate
 bun run db:generate
-bun run gst:seed 2025-01
+bun run gst:seed 2026-10
 bun run dev
 ```
 
@@ -72,7 +72,7 @@ That file is local-only. Never add it to this repository or share its contents.
 Create or configure exactly these five agent roles:
 
 ```text
-finance-coordinator
+gst-coordinator
 gst-agent
 taxonomy-agent
 vendor-agent
@@ -126,7 +126,7 @@ cash-flow demo rooms if they are visible.
 From the machine/network where Switch runs:
 
 ```bash
-curl "http://127.0.0.1:3000/api/switch/gst/summary?period=2025-01" \
+curl "http://127.0.0.1:3000/api/switch/gst/summary?period=2026-10" \
   -H "Authorization: Bearer $SWITCH_READ_TOKEN" \
   -H "X-Switch-Agent: gst-coordinator"
 ```
@@ -134,7 +134,7 @@ curl "http://127.0.0.1:3000/api/switch/gst/summary?period=2025-01" \
 The response must be JSON with `"ok": true`. Also verify:
 
 ```bash
-curl "http://127.0.0.1:3000/api/switch/gst/exceptions?period=2025-01" \
+curl "http://127.0.0.1:3000/api/switch/gst/exceptions?period=2026-10" \
   -H "Authorization: Bearer $SWITCH_READ_TOKEN" \
   -H "X-Switch-Agent: gst-agent"
 ```
@@ -148,7 +148,7 @@ connectivity before debugging Switch.
 Open the GST room and send:
 
 ```text
-Open the GST Close Room for 2025-01 and summarize the exceptions by type.
+Close October GST.
 ```
 
 Then verify these flows:
