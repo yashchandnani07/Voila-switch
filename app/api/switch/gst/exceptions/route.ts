@@ -1,20 +1,15 @@
-import { z } from "zod";
+import { exceptionQueue } from "@/lib/gst/close";
+import { switchRoute } from "@/lib/switch/route";
 
-import { db } from "@/lib/db";
-import { authorizeSwitch } from "@/lib/switch/auth";
-
-const querySchema = z.object({ period: z.string().regex(/^\d{4}-\d{2}$/) });
-
-export async function GET(request: Request) {
-  const unauthorized = authorizeSwitch(request, "read");
-  if (unauthorized) return unauthorized;
-  const parsed = querySchema.safeParse(Object.fromEntries(new URL(request.url).searchParams));
-  if (!parsed.success) return Response.json({ ok: false, error: "period must be YYYY-MM." }, { status: 400 });
-
-  const exceptions = await db.gstException.findMany({
-    where: { period: parsed.data.period },
-    include: { purchaseInvoice: { include: { vendor: true } }, gstr2bLine: true, decisions: { orderBy: { createdAt: "desc" }, take: 1 } },
-    orderBy: { createdAt: "asc" },
+/** `?period=YYYY-MM` plus optional `type`, `status`, `vendor` (name or GSTIN), `id` (UUID or stable ID). */
+export const GET = switchRoute("read", async ({ url }) => {
+  const query = url.searchParams;
+  const period = query.get("period") ?? "";
+  const exceptions = await exceptionQueue(period, {
+    type: query.get("type") ?? undefined,
+    status: query.get("status") ?? undefined,
+    vendor: query.get("vendor") ?? undefined,
+    id: query.get("id") ?? undefined,
   });
-  return Response.json({ ok: true, period: parsed.data.period, exceptions });
-}
+  return { period, count: exceptions.length, exceptions };
+});

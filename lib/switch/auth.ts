@@ -13,7 +13,7 @@ function tokenMatches(provided: string, expected: string | undefined) {
 }
 
 /**
- * Authenticate Switch-to-Magpie calls without coupling the service to a user session.
+ * Authenticate Switch-to-Voila calls without coupling the service to a user session.
  *
  * A write token is accepted for reads as well so a single local agent can be configured
  * during development. Production can provide separate read/write tokens.

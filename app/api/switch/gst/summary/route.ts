@@ -1,40 +1,32 @@
-import { z } from "zod";
+import { assertPeriod, caApprove, reopenPeriod, requestSignoff } from "@/lib/gst/close";
+import { GstError } from "@/lib/gst/errors";
+import { gstSummary, table4Export } from "@/lib/gst/summary";
+import { stringField, switchRoute } from "@/lib/switch/route";
 
-import { authorizeSwitch, switchActor } from "@/lib/switch/auth";
-import { gstSummary } from "@/lib/gst/summary";
-import { db } from "@/lib/db";
-
-export async function GET(request: Request) {
-  const unauthorized = authorizeSwitch(request, "read");
-  if (unauthorized) return unauthorized;
-  const period = new URL(request.url).searchParams.get("period");
-  if (!z.string().regex(/^\d{4}-\d{2}$/).safeParse(period).success) return Response.json({ ok: false, error: "period must be YYYY-MM." }, { status: 400 });
-  const summary = await gstSummary(period!);
-  if (new URL(request.url).searchParams.get("format") === "csv") {
-    const signedOff = await db.gstPeriod.findUnique({ where: { period: period! } });
-    if (signedOff?.status !== "SIGNED_OFF") {
-      return Response.json({ ok: false, error: "CA approval is required before exporting the filing summary." }, { status: 409 });
-    }
-    const csv = [
-      "period,claim_paise,defer_paise,reverse_paise,open_exceptions",
-      `${summary.period},${summary.itc.claimPaise},${summary.itc.deferPaise},${summary.itc.reversePaise},${summary.exceptions.open}`,
-    ].join("\n");
-    return new Response(csv, { headers: { "content-type": "text/csv", "content-disposition": `attachment; filename="gstr-3b-${period}.csv"` } });
+/** `?period=YYYY-MM` for the live summary; `&format=csv|json` for the CA-gated Table 4 export. */
+export const GET = switchRoute("read", async ({ url }) => {
+  const period = assertPeriod(url.searchParams.get("period"));
+  const format = url.searchParams.get("format");
+  if (format === "csv") {
+    return new Response(await table4Export(period, "csv"), {
+      headers: { "content-type": "text/csv; charset=utf-8", "content-disposition": `attachment; filename="gstr-3b-table4-${period}.csv"` },
+    });
   }
-  return Response.json({ ok: true, ...summary });
-}
+  if (format === "json") return { export: await table4Export(period, "json") };
+  if (format) throw new GstError(400, "format must be csv or json.");
+  return gstSummary(period);
+});
 
-export async function POST(request: Request) {
-  const unauthorized = authorizeSwitch(request, "write");
-  if (unauthorized) return unauthorized;
-  let body: unknown;
-  try { body = await request.json(); } catch { return Response.json({ ok: false, error: "Send JSON." }, { status: 400 }); }
-  const parsed = z.object({ period: z.string().regex(/^\d{4}-\d{2}$/), action: z.literal("ca_approve") }).safeParse(body);
-  if (!parsed.success) return Response.json({ ok: false, error: "Only { period, action: 'ca_approve' } is accepted." }, { status: 400 });
-  const result = await db.gstPeriod.upsert({
-    where: { period: parsed.data.period },
-    create: { period: parsed.data.period, status: "SIGNED_OFF", signedOffBy: switchActor(request), signedOffAt: new Date() },
-    update: { status: "SIGNED_OFF", signedOffBy: switchActor(request), signedOffAt: new Date() },
-  });
-  return Response.json({ ok: true, period: result.period, status: result.status, signedOffBy: result.signedOffBy, signedOffAt: result.signedOffAt });
-}
+/**
+ * `{ period, action: "request_signoff" }` — reporting agent, once nothing is undecided.
+ * `{ period, action: "ca_approve", approvedBy: "<CA name>" }` — the CA's sign-off.
+ * `{ period, action: "reopen", approvedBy, reason }` — undo a sign-off, with a reason.
+ */
+export const POST = switchRoute("write", async ({ body, actor, approvedBy }) => {
+  const period = stringField(body, "period")!;
+  const action = stringField(body, "action")!;
+  if (action === "request_signoff") return requestSignoff(period, { actor, approvedBy });
+  if (action === "ca_approve") return caApprove(period, { actor, approvedBy });
+  if (action === "reopen") return reopenPeriod(period, { reason: stringField(body, "reason", false) }, { actor, approvedBy });
+  throw new GstError(400, "action must be request_signoff, ca_approve or reopen.");
+});

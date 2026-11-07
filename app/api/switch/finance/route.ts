@@ -1,28 +1,12 @@
-import { z } from "zod";
+import { GstError } from "@/lib/gst/errors";
+import { FINANCE_DOMAINS, financeSnapshot, type FinanceDomain } from "@/lib/switch/finance";
+import { switchRoute } from "@/lib/switch/route";
 
-import { authorizeSwitch } from "@/lib/switch/auth";
-import { financeSnapshot, type FinanceDomain } from "@/lib/switch/finance";
-
-const domains = ["overview", "gst"] as const;
-const querySchema = z.enum(domains).default("overview");
-
-export async function GET(request: Request) {
-  const unauthorized = authorizeSwitch(request, "read");
-  if (unauthorized) return unauthorized;
-
-  const domain = querySchema.safeParse(new URL(request.url).searchParams.get("domain") ?? "overview");
-  if (!domain.success) {
-    return Response.json({ ok: false, error: "Unknown finance domain." }, { status: 400 });
-  }
-
-  try {
-    const period = new URL(request.url).searchParams.get("period") ?? undefined;
-    return Response.json({ ok: true, ...(await financeSnapshot(domain.data as FinanceDomain, period)) });
-  } catch (error) {
-    console.error("Switch finance snapshot failed", error);
-    return Response.json(
-      { ok: false, error: "Magpie could not read its finance sources." },
-      { status: 500 },
-    );
-  }
-}
+/** `?domain=overview|gst|taxonomy&period=YYYY-MM`; period defaults to the latest with data. */
+export const GET = switchRoute("read", async ({ url }) => {
+  const domain = url.searchParams.get("domain") ?? "overview";
+  if (!FINANCE_DOMAINS.includes(domain as FinanceDomain)) throw new GstError(400, `domain must be one of ${FINANCE_DOMAINS.join(", ")}.`);
+  const period = url.searchParams.get("period") ?? undefined;
+  if (period && !/^\d{4}-\d{2}$/.test(period)) throw new GstError(400, "period must be YYYY-MM.");
+  return financeSnapshot(domain as FinanceDomain, period);
+});
