@@ -1,8 +1,8 @@
 # The matcher decides, the agents explain: closing a month of GST in Slack
 
-![Magpie on Switch: a Slack proposal next to the Close Room page](https://raw.githubusercontent.com/yashchandnani07/Voila-switch/main/blog/images/01-cover.png)
+![Voila on Switch: a Slack proposal next to the Close Room page](https://raw.githubusercontent.com/yashchandnani07/Voila-switch/main/blog/images/01-cover.png)
 
-*We built a GST close room on Switch. Five agents work in a Slack channel with an accountant and a Chartered Accountant to match a purchase register against GSTR-2B. On a generated October close with 191 invoices, Magpie found ₹5.30 lakh of credit at risk, the agents refused to claim anything the law forbids, and the CA signed off a Table 4 with ₹29,41,658.97 of net input tax credit. The matcher made 0 wrong matches across 3,633 matched invoices in our tests, and every approval is recorded against a name.*
+*We built a GST close room on Switch. Five agents work in a Slack channel with an accountant and a Chartered Accountant to match a purchase register against GSTR-2B. On a generated October close with 191 invoices, Voila found ₹5.30 lakh of credit at risk, the agents refused to claim anything the law forbids, and the CA signed off a Table 4 with ₹29,41,658.97 of net input tax credit. The matcher made 0 wrong matches across 3,633 matched invoices in our tests, and every approval is recorded against a name.*
 
 ## The problem
 
@@ -14,9 +14,9 @@ We wanted to see whether agents in a chat room could do the grinding part withou
 
 ### What we built
 
-Magpie is a GST close room. An accountant and a CA sit in one Slack channel with five agents. A coordinator splits the work. A GST agent explains each exception and proposes a treatment. A tax-rules agent looks at blocked credits. A vendor agent drafts the chase messages. A reporting agent prepares GSTR-3B Table 4 and asks the CA to sign.
+Voila is a GST close room. An accountant and a CA sit in one Slack channel with five agents. A coordinator splits the work. A GST agent explains each exception and proposes a treatment. A tax-rules agent looks at blocked credits. A vendor agent drafts the chase messages. A reporting agent prepares GSTR-3B Table 4 and asks the CA to sign.
 
-Switch connects the agents to Slack and routes each message to the agent it names. Magpie is the system of record: a Next.js app on Neon Postgres that holds the invoices, runs the matcher, enforces the law, and keeps the audit trail. The Close Room page reads the same database, so whatever is approved in Slack shows up on the page within seconds.
+Switch connects the agents to Slack and routes each message to the agent it names. Voila is the system of record: a Next.js app on Neon Postgres that holds the invoices, runs the matcher, enforces the law, and keeps the audit trail. The Close Room page reads the same database, so whatever is approved in Slack shows up on the page within seconds.
 
 One rule shaped every decision after it.
 
@@ -77,7 +77,7 @@ ERROR 409: Section 16(2)(aa): this invoice is not in GSTR-2B, so the credit cann
 claimed. Defer it and chase the vendor, or reverse it.
 ```
 
-Magpie refuses a claim on an invoice with no 2B line, a claim on a blocked credit without an approved override, any money write with no `approvedBy`, a vendor message that was not approved, an export before the CA signs off, and any edit after sign-off. The browser and the agents call the same service, so the rules cannot drift apart.
+Voila refuses a claim on an invoice with no 2B line, a claim on a blocked credit without an approved override, any money write with no `approvedBy`, a vendor message that was not approved, an export before the CA signs off, and any edit after sign-off. The browser and the agents call the same service, so the rules cannot drift apart.
 
 ![Three places a human has to say yes](https://raw.githubusercontent.com/yashchandnani07/Voila-switch/main/blog/images/03-three-gates.png)
 
@@ -97,11 +97,11 @@ Every write lands in an append-only event table with two names: the agent that m
 
 ## How we used Switch
 
-![Slack to Switch to the agents to Magpie to Postgres](https://raw.githubusercontent.com/yashchandnani07/Voila-switch/main/blog/images/02-architecture.png)
+![Slack to Switch to the agents to Voila to Postgres](https://raw.githubusercontent.com/yashchandnani07/Voila-switch/main/blog/images/02-architecture.png)
 
 *A message in Slack becomes a row in Postgres, and the page reads the same rows.*
 
-Switch gave us the parts we did not want to build: a Slack bridge, rooms, mention routing, and a controller that runs each agent as a managed session on the machine. Each of our five agents has a few paragraphs of role instructions and one tool, a small Python client that calls Magpie's API with a bearer token and an agent name.
+Switch gave us the parts we did not want to build: a Slack bridge, rooms, mention routing, and a controller that runs each agent as a managed session on the machine. Each of our five agents has a few paragraphs of role instructions and one tool, a small Python client that calls Voila's API with a bearer token and an agent name.
 
 Delegation worked well. When the accountant typed `@gst-coordinator Close October GST.`, the coordinator read the period, posted a short headline, and messaged three specialists in the same thread. They ran in parallel. The GST agent took 1m 43s and 16 tool calls, the tax-rules agent 1m 0s and 9, the vendor agent 1m 30s and 15. Slack shows each agent's working time and tool calls under its name, which turned out to be a good trust signal for a CA who wants to know a reply was not guesswork.
 
@@ -111,7 +111,7 @@ Agents only hear messages that mention them. Our first test message said "Close 
 
 An agent's final text is invisible. It has to call a `post_message` tool to say anything in the room.
 
-Switch has no approval primitive an agent can call for business decisions. So approvals are conversation. An agent proposes in the thread, a person replies "approve 1 to 7", and the agent writes with the sender's name. Magpie is what makes that safe, because it rejects any money write that arrives without a name.
+Switch has no approval primitive an agent can call for business decisions. So approvals are conversation. An agent proposes in the thread, a person replies "approve 1 to 7", and the agent writes with the sender's name. Voila is what makes that safe, because it rejects any money write that arrives without a name.
 
 Agents started with an empty environment, so the token lives in a private file in each agent's folder and never in its instructions.
 
@@ -143,7 +143,7 @@ Then we tried to break it. The accountant typed:
 
 The agent answered in 22 seconds that it cannot claim them because the supplier has not reported them and they do not appear in GSTR-2B, and that the right move is to defer and chase. Even if it had agreed, the API would have returned the 409 shown earlier.
 
-The first gate was the vendor reminders. The vendor agent had drafted nine, one per vendor. It posted one line per vendor and a single example letter instead of nine, and the rest were readable on the Vendor chases page. The accountant replied "approve Coimbatore and Connaught, hold the rest." Two went out and seven stayed as drafts. In this demo no mail provider is configured, so "sent" means Magpie recorded it and logged the email. On the page, each vendor row opens to the full letter, its status and where it went.
+The first gate was the vendor reminders. The vendor agent had drafted nine, one per vendor. It posted one line per vendor and a single example letter instead of nine, and the rest were readable on the Vendor chases page. The accountant replied "approve Coimbatore and Connaught, hold the rest." Two went out and seven stayed as drafts. In this demo no mail provider is configured, so "sent" means Voila recorded it and logged the email. On the page, each vendor row opens to the full letter, its status and where it went.
 
 The second gate was the decisions. "Approve 1 to 7" took the GST agent 2m 21s and 24 tool calls, and recorded 21 decisions under the approver's name: 3 claimed for ₹48,673.80, 14 deferred for ₹1,48,781.25, and 4 reversed for ₹3,44,224.00.
 
@@ -151,7 +151,7 @@ The second gate was the decisions. "Approve 1 to 7" took the GST agent 2m 21s an
 
 *Left: the 21 decisions recorded. Right: Table 4 signed off and the export generated.*
 
-The third gate was the CA. The reporting agent posted a draft Table 4 and asked for explicit approval. The reply was "I'm Rakesh Mehta, the CA. I've reviewed Table 4 for October 2026. Approved, please sign it off." The agent recorded the sign-off under that name, generated `gstr3b-table4-2026-10.csv`, and reminded everyone that Magpie never files the return.
+The third gate was the CA. The reporting agent posted a draft Table 4 and asked for explicit approval. The reply was "I'm Rakesh Mehta, the CA. I've reviewed Table 4 for October 2026. Approved, please sign it off." The agent recorded the sign-off under that name, generated `gstr3b-table4-2026-10.csv`, and reminded everyone that Voila never files the return.
 
 The final table, as the CA saw it:
 
@@ -165,7 +165,7 @@ The page shows the same figures, with the CSV download unlocked.
 
 ![GSTR-3B Table 4 after sign-off](https://raw.githubusercontent.com/yashchandnani07/Voila-switch/main/blog/images/12-table4.png)
 
-*Credit deferred to later months, ₹1,48,781.25, sits beside the table and not inside it.*
+*Credit deferred to later months (₹1,48,781.25) is reported outside the table.*
 
 From the first message to the sign-off took about 25 minutes, and most of that was us reading and typing.
 
@@ -175,7 +175,7 @@ While this happens in Slack, the Close Room page updates beside it. It opens wit
 
 ![The Close Room overview after sign-off](https://raw.githubusercontent.com/yashchandnani07/Voila-switch/main/blog/images/08-close-room-overview.png)
 
-*The overview once the CA has signed off.*
+*The tie-out and the credit funnel on the overview page, after sign-off.*
 
 The exception queue shows each issue, its status and who decided it.
 
@@ -226,6 +226,19 @@ To bring the agents up, run Switch locally, create the five agents and the room 
 4. Instructions in a file are a suggestion. Instructions in the agent's definition are a requirement. We spent a round of testing on the assumption that the agents re-read their files.
 
 5. A refusal is a feature to demonstrate. The moment the agent turned down a plausible request and cited the section did more for trust than any number on the page.
+
+## What we are building next
+
+The October close covers the purchase side of GSTR-3B Table 4 for one business, and it covers it end to end. The next pieces widen that:
+
+- Credit and debit notes, which GSTR-2B carries alongside invoices, and reverse-charge purchases.
+- Payment data, so the 180-day rule that reverses credit on unpaid invoices can run automatically.
+- Carry-forward of deferred credit, so what we hold back in October is re-checked the moment November's 2B arrives.
+- A CA firm view with many clients, and separate logins for the accountant and the CA.
+- Outward supplies and the net tax payable, to cover the whole return.
+- Real exports from Tally and Zoho Books in place of generated ones.
+
+If you build with agents near money, where do you draw the line between what the model may decide and what only code and a person may? We would like to hear where yours sits.
 
 ## Links
 
