@@ -1,11 +1,5 @@
 import {
-  BookOpen,
-  Bot,
-  ChartColumn,
-  Database,
-  LayoutGrid,
-  Scale,
-  Table2,
+  FileCheck2,
 } from "lucide-react";
 
 /**
@@ -22,14 +16,8 @@ import {
  * not built yet, and adding a route here before the screen exists is how a dead link ships.
  */
 export const SECTIONS = [
-  { icon: Table2, label: "Models", href: "/models" },
-  { icon: Scale, label: "Reconciliation", href: "/recon" },
-  { icon: ChartColumn, label: "Boards", href: "/boards" },
-  { icon: Database, label: "Data sources", href: "/databases" },
-  { icon: Bot, label: "Agents", href: "/agents" },
-  { icon: BookOpen, label: "Library" },
-  { icon: LayoutGrid, label: "Templates" },
-] as const satisfies readonly { icon: typeof Table2; label: string; href?: string }[];
+  { icon: FileCheck2, label: "GST Close Room", href: "/gst" },
+] as const satisfies readonly { icon: typeof FileCheck2; label: string; href?: string }[];
 
 export type SectionLabel = (typeof SECTIONS)[number]["label"];
 
@@ -42,15 +30,8 @@ export type SectionLabel = (typeof SECTIONS)[number]["label"];
  * choice stops being arbitrary the day Library ships and has to be argued about properly.
  */
 export const TAB_LABELS = [
-  "Models",
-  "Reconciliation",
-  "Boards",
-  "Data sources",
-  "Agents",
+  "GST Close Room",
 ] as const satisfies readonly SectionLabel[];
 
 /** A tab bar has no room for "Reconciliation" or "Data sources" under a 24px icon. */
-export const SHORT_LABEL: Partial<Record<SectionLabel, string>> = {
-  Reconciliation: "Recon",
-  "Data sources": "Data",
-};
+export const SHORT_LABEL: Partial<Record<SectionLabel, string>> = {};

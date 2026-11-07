@@ -1,5 +1,3 @@
-import { Suspense } from "react";
-import { Tour } from "@/components/app/tour";
 import type { Metadata } from "next";
 import { Inter, Inter_Tight } from "next/font/google";
 import localFont from "next/font/local";
@@ -35,15 +33,14 @@ const hinato = localFont({
 export const metadata: Metadata = {
   metadataBase: new URL("https://magpie.app"),
   title: {
-    default: "Magpie — the AI-native finance workspace",
+    default: "Magpie — GST Close Room",
     template: "%s · Magpie",
   },
   description:
-    "Live data, AI forecasting, and collaboration in one modelling workspace. Spend less time fixing spreadsheets and more time shaping the plan.",
+    "A deterministic monthly GST close room for purchase-register and GSTR-2B review.",
   openGraph: {
-    title: "Magpie — the AI-native finance workspace",
-    description:
-      "Live data, AI forecasting, and collaboration in one modelling workspace.",
+    title: "Magpie — GST Close Room",
+    description: "Close GST periods with deterministic matching and human approvals.",
     type: "website",
   },
 };
@@ -82,17 +79,6 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         />
         {children}
 
-        {/* The demo walkthrough (`lib/tour.ts`). Inert without `?tour=` in the URL, and in
-            Suspense because it reads search params — which would otherwise opt every page
-            in the app out of static rendering. */}
-        <Suspense fallback={null}>
-          <Tour />
-        </Suspense>
-        {/*
-          Mounted once, at the root, because a toast has to survive the
-          navigation that triggered it. Styled for the product's white surface —
-          if /learning ever fires one in dark mode it will need its own variant.
-        */}
         <Toaster />
       </body>
     </html>

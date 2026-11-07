@@ -3,7 +3,7 @@ import { z } from "zod";
 import { authorizeSwitch } from "@/lib/switch/auth";
 import { financeSnapshot, type FinanceDomain } from "@/lib/switch/finance";
 
-const domains = ["overview", "reconciliation", "taxonomy", "gst", "cashflow", "reporting"] as const;
+const domains = ["overview", "gst"] as const;
 const querySchema = z.enum(domains).default("overview");
 
 export async function GET(request: Request) {
@@ -16,7 +16,8 @@ export async function GET(request: Request) {
   }
 
   try {
-    return Response.json({ ok: true, ...(await financeSnapshot(domain.data as FinanceDomain)) });
+    const period = new URL(request.url).searchParams.get("period") ?? undefined;
+    return Response.json({ ok: true, ...(await financeSnapshot(domain.data as FinanceDomain, period)) });
   } catch (error) {
     console.error("Switch finance snapshot failed", error);
     return Response.json(

@@ -34,19 +34,57 @@ def _request(method: str, path: str, payload: dict | None = None) -> dict:
         raise MagpieError(f"Magpie is unavailable: {error.reason}") from error
 
 
-def reconciliation() -> dict:
-    """Return the latest reconciliation queue and cash-at-risk summary."""
-
-    return finance("reconciliation")
-
-
-def finance(domain: str = "overview") -> dict:
+def finance(domain: str = "overview", period: str | None = None) -> dict:
     """Read one finance capability through Magpie's Switch boundary."""
 
-    allowed = {"overview", "reconciliation", "taxonomy", "gst", "cashflow", "reporting"}
+    allowed = {"overview", "gst"}
     if domain not in allowed:
         raise ValueError(f"domain must be one of {sorted(allowed)}")
-    return _request("GET", f"/api/switch/finance?domain={domain}")
+    query = f"/api/switch/finance?domain={domain}"
+    if period:
+        query += f"&period={period}"
+    return _request("GET", query)
+
+
+def gst_exceptions(period: str) -> dict:
+    """Return the typed GST exception queue for one filing period."""
+
+    return _request("GET", f"/api/switch/gst/exceptions?period={period}")
+
+
+def gst_decision(exception_id: str, decision: str, scope: str, note: str | None = None) -> dict:
+    """Record an accountant-approved claim, defer, or reverse decision."""
+
+    if decision not in {"claim", "defer", "reverse"}:
+        raise ValueError("decision must be claim, defer, or reverse")
+    payload = {"exceptionId": exception_id, "decision": decision, "scope": scope}
+    if note:
+        payload["note"] = note
+    return _request("POST", "/api/switch/gst/decision", payload)
+
+
+def vendor_followup(vendor_id: str, period: str, draft: str, action: str = "draft") -> dict:
+    """Create or move an approval-gated vendor follow-up through its lifecycle."""
+
+    if action not in {"draft", "approve", "send", "resolve"}:
+        raise ValueError("action must be draft, approve, send, or resolve")
+    return _request(
+        "POST",
+        "/api/switch/gst/followup",
+        {"vendorId": vendor_id, "period": period, "draft": draft, "action": action},
+    )
+
+
+def approve_gst_summary(period: str) -> dict:
+    """Record the final CA approval gate for a GST period."""
+
+    return _request("POST", "/api/switch/gst/summary", {"period": period, "action": "ca_approve"})
+
+
+def gst_summary(period: str) -> dict:
+    """Return the filing summary; export remains gated by CA approval."""
+
+    return _request("GET", f"/api/switch/gst/summary?period={period}")
 
 
 def readable_snapshot(snapshot: dict) -> str:
@@ -56,37 +94,19 @@ def readable_snapshot(snapshot: dict) -> str:
     status = snapshot.get("status", "ready")
     if status == "source_not_configured":
         return f"[{domain.upper()}] Not configured: {snapshot.get('message', 'source missing')}"
-    if domain == "reconciliation":
-        summary = snapshot.get("reconciliation", {}).get("summary", {})
+    if domain == "gst":
+        gst = snapshot.get("gst", snapshot)
+        source = gst.get("source", {})
+        exceptions = gst.get("exceptions", {})
+        itc = gst.get("itc", {})
         return (
-            "[RECONCILIATION]\n"
-            f"Open exceptions: {summary.get('openExceptions', 0)}\n"
-            f"Accepted: {summary.get('acceptedExceptions', 0)} | "
-            f"Rejected: {summary.get('rejectedExceptions', 0)}\n"
-            f"Open at risk: {summary.get('openAtRiskPaise', 0)} paise"
-        )
-    if domain == "cashflow":
-        cash = snapshot.get("cash") or {}
-        return (
-            "[CASH FLOW]\n"
-            f"Reconciled: {cash.get('totalReconciledPaise', 0)} paise\n"
-            f"In flight: {cash.get('totalInFlightPaise', 0)} paise\n"
-            f"At risk: {cash.get('totalAtRiskPaise', 0)} paise"
+            "[GST CLOSE ROOM]\n"
+            f"Period: {gst.get('period', 'unknown')}\n"
+            f"Books: {source.get('purchaseInvoices', 0)} invoices | "
+            f"GSTR-2B: {source.get('gstr2bLines', 0)} lines\n"
+            f"Exceptions: {exceptions.get('total', 0)} "
+            f"(open {exceptions.get('open', 0)})\n"
+            f"ITC decisions: claim {itc.get('claimPaise', 0)} paise | "
+            f"defer {itc.get('deferPaise', 0)} paise | reverse {itc.get('reversePaise', 0)} paise"
         )
     return f"[{domain.upper()}] {status}"
-
-
-def resolve_exception(
-    exception_id: str,
-    decision: str,
-    scope: str,
-    note: str | None = None,
-) -> dict:
-    """Record a human-approved exception decision in Magpie."""
-
-    if decision not in {"accepted", "rejected"}:
-        raise ValueError("decision must be accepted or rejected")
-    payload = {"exceptionId": exception_id, "decision": decision, "scope": scope}
-    if note:
-        payload["note"] = note
-    return _request("POST", "/api/switch/reconciliation", payload)

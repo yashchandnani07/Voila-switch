@@ -16,7 +16,7 @@ import { cn } from "@/lib/cn";
  * information.
  */
 export function Rail({
-  active = "Models",
+  active = "GST Close Room",
   initials,
 }: {
   active?: SectionLabel;

@@ -244,6 +244,44 @@ enum SwitchDecisionStatus {
   REJECTED
 }
 
+enum GstExceptionType {
+  NOT_IN_2B
+  NOT_IN_BOOKS
+  AMOUNT_MISMATCH
+  GSTIN_TYPO
+  PERIOD_MISMATCH
+  BLOCKED_CREDIT
+  INVALID_GSTIN
+  TAX_TYPE_MISMATCH
+}
+
+enum GstExceptionStatus {
+  OPEN
+  CLAIMED
+  DEFERRED
+  REVERSED
+}
+
+enum GstItcDecision {
+  CLAIM
+  DEFER
+  REVERSE
+}
+
+enum VendorFollowupStatus {
+  DRAFT
+  APPROVED
+  SENT
+  RESOLVED
+}
+
+enum GstPeriodStatus {
+  OPEN
+  MATCHED
+  PENDING_CA
+  SIGNED_OFF
+}
+
 /// Adding a command type is a migration on purpose: §1.3's list is meant to be
 /// short, and a new mutation is a decision, not an implementation detail.
 enum CommandType {
@@ -259,16 +297,139 @@ enum CommandType {
 }
 
 model SwitchReconciliationDecision {
-  id         String               @id @default(uuid())
+  id          String               @id @default(uuid())
   exceptionId String
-  status     SwitchDecisionStatus
-  scope      String
-  actor      String
-  note       String?
-  createdAt  DateTime             @default(now())
+  status      SwitchDecisionStatus
+  scope       String
+  actor       String
+  note        String?
+  createdAt   DateTime             @default(now())
 
   @@index([exceptionId, createdAt])
   @@map("switch_reconciliation_decision")
+}
+
+model Vendor {
+  id        String            @id @default(uuid())
+  gstin     String
+  name      String
+  stateCode String
+  contact   String?
+  createdAt DateTime          @default(now())
+  invoices  PurchaseInvoice[]
+  followups VendorFollowup[]
+
+  @@unique([gstin])
+  @@index([name])
+  @@map("gst_vendor")
+}
+
+model PurchaseInvoice {
+  id                  String         @id @default(uuid())
+  vendorId            String
+  invoiceNo           String
+  normalizedInvoiceNo String
+  invoiceDate         DateTime       @db.Date
+  period              String
+  taxablePaise        Int
+  cgstPaise           Int            @default(0)
+  sgstPaise           Int            @default(0)
+  igstPaise           Int            @default(0)
+  hsn                 String?
+  category            String?
+  source              String         @default("purchase_register")
+  createdAt           DateTime       @default(now())
+  vendor              Vendor         @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  exceptions          GstException[]
+
+  @@index([vendorId, normalizedInvoiceNo])
+  @@index([period, invoiceDate])
+  @@map("gst_purchase_invoice")
+}
+
+model Gstr2bLine {
+  id                  String         @id @default(uuid())
+  supplierGstin       String
+  invoiceNo           String
+  normalizedInvoiceNo String
+  invoiceDate         DateTime       @db.Date
+  period              String
+  taxablePaise        Int
+  cgstPaise           Int            @default(0)
+  sgstPaise           Int            @default(0)
+  igstPaise           Int            @default(0)
+  createdAt           DateTime       @default(now())
+  exceptions          GstException[]
+
+  @@index([supplierGstin, normalizedInvoiceNo])
+  @@index([period, invoiceDate])
+  @@map("gst_gstr2b_line")
+}
+
+model GstException {
+  id                String             @id @default(uuid())
+  stableId          String             @unique
+  period            String
+  type              GstExceptionType
+  status            GstExceptionStatus @default(OPEN)
+  evidence          Json
+  amountPaise       Int
+  purchaseInvoiceId String?
+  gstr2bLineId      String?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  purchaseInvoice   PurchaseInvoice?   @relation(fields: [purchaseInvoiceId], references: [id], onDelete: Cascade)
+  gstr2bLine        Gstr2bLine?        @relation(fields: [gstr2bLineId], references: [id], onDelete: Cascade)
+  decisions         ItcDecision[]
+
+  @@index([period, status])
+  @@index([purchaseInvoiceId])
+  @@index([gstr2bLineId])
+  @@map("gst_exception")
+}
+
+model ItcDecision {
+  id          String         @id @default(uuid())
+  exceptionId String
+  decision    GstItcDecision
+  actor       String
+  scope       String
+  note        String?
+  createdAt   DateTime       @default(now())
+  exception   GstException   @relation(fields: [exceptionId], references: [id], onDelete: Cascade)
+
+  @@index([exceptionId, createdAt])
+  @@map("gst_itc_decision")
+}
+
+model VendorFollowup {
+  id         String               @id @default(uuid())
+  vendorId   String
+  period     String
+  draft      String
+  status     VendorFollowupStatus @default(DRAFT)
+  approvedBy String?
+  sentAt     DateTime?
+  resolvedAt DateTime?
+  createdAt  DateTime             @default(now())
+  updatedAt  DateTime             @updatedAt
+  vendor     Vendor               @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+
+  @@unique([vendorId, period])
+  @@index([period, status])
+  @@map("gst_vendor_followup")
+}
+
+model GstPeriod {
+  id          String          @id @default(uuid())
+  period      String          @unique
+  status      GstPeriodStatus @default(OPEN)
+  signedOffBy String?
+  signedOffAt DateTime?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@map("gst_period")
 }
 
 model Model {

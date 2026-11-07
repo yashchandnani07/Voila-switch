@@ -1,25 +1,27 @@
 # Magpie + Switch
 
-Switch is Magpie's conversation and orchestration layer. Magpie remains the finance system of
-record: the protected API reads the reconciliation report, cash position, data sources, and
-decision history from Magpie/Neon.
+Switch is Magpie's conversation and orchestration layer. Magpie remains the GST system of
+record: the protected API reads exceptions, approvals, follow-ups, and filing summaries from
+Neon.
 
-## Practical agent roster
+## GST Close Room agent roster
 
 Use one user-facing room with these roles:
 
 - `finance-coordinator` — routes the user's request and delegates in parallel.
-- `reconciliation-agent` — investigates exceptions and records explicit human decisions.
-- `taxonomy-agent` — classifies transactions when a transaction/ledger source exists.
-- `gst-agent` — checks GST readiness when invoice/tax fields exist.
-- `cashflow-agent` — reports confirmed, expected, and unverified cash separately.
-- `reporting-agent` — prepares management and filing-ready reports.
+- `gst-agent` — explains deterministic purchase-register/GSTR-2B exceptions.
+- `taxonomy-agent` — reviews Section 17(5) blocked-credit indicators.
+- `vendor-agent` — drafts approval-gated vendor follow-ups.
+- `reporting-agent` — prepares the CA-gated GSTR-3B Table 4 summary.
 
 The role instructions live under `switch/agents/<role>/instructions.md`. The coordinator must
-not invent missing GST or taxonomy data: today those agents accurately report
-`source_not_configured` until matching Magpie data tables are added.
+not invent missing GST or taxonomy data.
 
-## Magpie finance boundary
+## Magpie GST boundary
+
+The complete browser and backend connection contract is documented in
+[`../UI-connection.md`](../UI-connection.md). This file only covers the Switch-side
+connection and user flow.
 
 Configure each agent with:
 
@@ -29,30 +31,28 @@ MAGPIE_SWITCH_TOKEN=<SWITCH_READ_TOKEN value>
 SWITCH_AGENT_NAME=<agent role>
 ```
 
-Read a domain through:
+Read the Close Room through:
 
 ```text
-GET /api/switch/finance?domain=overview
-GET /api/switch/finance?domain=reconciliation
-GET /api/switch/finance?domain=taxonomy
-GET /api/switch/finance?domain=gst
-GET /api/switch/finance?domain=cashflow
-GET /api/switch/finance?domain=reporting
+GET /api/switch/finance?domain=gst&period=2025-01
+GET /api/switch/gst/exceptions?period=2025-01
+GET /api/switch/gst/summary?period=2025-01
 ```
 
-Reconciliation decisions continue to use the write token and
-`POST /api/switch/reconciliation`. Every decision stores the Switch actor, scope, note, and
-timestamp in Neon and retries are idempotent.
+GST decisions use `POST /api/switch/gst/decision`, vendor follow-ups use
+`POST /api/switch/gst/followup`, and the CA gate uses `POST /api/switch/gst/summary`.
+Every write stores the Switch actor, scope, note, and timestamp in Neon. Retries are
+idempotent for decisions.
 
 ## Local user flow
 
 1. Start Magpie with `bun run dev`.
 2. Confirm Switch Core is healthy at `http://127.0.0.1:44883/health`.
 3. Open the Switch Console and use one room containing the coordinator and specialists.
-4. Ask: `Give me a finance health check. Delegate reconciliation and cash flow in parallel.`
-5. Ask: `Prepare a reporting summary and tell me whether GST and taxonomy are ready.`
-6. For an open exception, provide an explicit instruction such as:
-   `Accept exception <id> for settlement-to-bank reconciliation, scope: <scope>.`
+4. Seed the demo period with `bun run gst:seed 2025-01`.
+5. Ask: `Open the GST Close Room for 2025-01 and summarize exceptions by type.`
+6. Ask for a vendor draft, inspect it, and explicitly approve it before sending.
+7. Ask the reporting agent for a summary, then explicitly approve the CA summary before export.
 
 The response should use a headline, key figures, next action, and source timestamp. A report
 is never described as filed unless Magpie returns a real filing confirmation.
@@ -60,7 +60,8 @@ is never described as filed unless Magpie returns a real filing confirmation.
 ## Checks
 
 ```bash
+bun run gst:check
 bun run switch:check
-curl "http://127.0.0.1:3000/api/switch/finance?domain=overview" \
+curl "http://127.0.0.1:3000/api/switch/gst/summary?period=2025-01" \
   -H "Authorization: Bearer $SWITCH_READ_TOKEN"
 ```
