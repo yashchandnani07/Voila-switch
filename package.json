@@ -15,8 +15,12 @@
     "mail:check": "bun run scripts/mail-check.ts",
     "switch:check": "bun run scripts/switch-check.ts",
     "gst:check": "bun run scripts/gst-check.ts",
+    "gst:generate": "bun run scripts/gst-generate.ts",
+    "gst:eval": "bun run scripts/gst-eval.ts",
     "gst:seed": "bun run scripts/gst-seed.ts",
-    "db:verify": "bun run gst:check && bun run typecheck && bun run build"
+    "db:verify": "bun run gst:check && bun run typecheck && bun run build",
+    "demo:reset": "bun run scripts/gst-seed.ts 2026-10 && python3 switch/prepare_agents.py",
+    "demo:status": "python3 switch/demo_status.py --watch"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.10.0",
