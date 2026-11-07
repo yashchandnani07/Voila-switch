@@ -204,8 +204,8 @@ The work is multi-party, has a deadline, and every money decision needs a person
 ## Try it
 
 ```bash
-git clone https://github.com/yashchandnani07/magpie-switch
-cd magpie-switch
+git clone https://github.com/yashchandnani07/Voila-switch
+cd Voila-switch
 bun install
 cp .env.example .env        # add a Postgres URL, an auth secret and two Switch tokens
 bun run db:migrate
@@ -242,6 +242,6 @@ If you build with agents near money, where do you draw the line between what the
 
 ## Links
 
-- Code: https://github.com/yashchandnani07/magpie-switch
+- Code: https://github.com/yashchandnani07/Voila-switch
 - Setup for Switch and Slack: `switch/BUDDY-SETUP.md` and `switch/slack-app-manifest.json`
 - The numbers above come from real runs of the October 2026 demo month. The Slack screenshots are from one run and the Close Room screenshots from a second run of the same month. The numbers match because the matcher is deterministic and the approvals were the same.

@@ -1,6 +1,6 @@
 # The matcher decides, the agents explain: closing a month of GST in Slack
 
-![Magpie on Switch: a Slack proposal next to the Close Room page](https://raw.githubusercontent.com/yashchandnani07/magpie-switch/main/blog/images/01-cover.png)
+![Magpie on Switch: a Slack proposal next to the Close Room page](https://raw.githubusercontent.com/yashchandnani07/Voila-switch/main/blog/images/01-cover.png)
 
 *We built a GST close room on Switch. Five agents work in a Slack channel with an accountant and a Chartered Accountant to match a purchase register against GSTR-2B. On a generated October close with 191 invoices, Magpie found ₹5.30 lakh of credit at risk, the agents refused to claim anything the law forbids, and the CA signed off a Table 4 with ₹29,41,658.97 of net input tax credit. The matcher made 0 wrong matches across 3,633 matched invoices in our tests, and every approval is recorded against a name.*
 
@@ -36,7 +36,7 @@ Across the month there are 21 of these, in eight kinds. The three above are the 
 
 ## How we built it
 
-![The matcher funnel for October 2026](https://raw.githubusercontent.com/yashchandnani07/magpie-switch/main/blog/images/04-matcher-funnel.png)
+![The matcher funnel for October 2026](https://raw.githubusercontent.com/yashchandnani07/Voila-switch/main/blog/images/04-matcher-funnel.png)
 
 *The October close. 191 invoices in the books, 173 matched, 21 exceptions.*
 
@@ -79,7 +79,7 @@ claimed. Defer it and chase the vendor, or reverse it.
 
 Magpie refuses a claim on an invoice with no 2B line, a claim on a blocked credit without an approved override, any money write with no `approvedBy`, a vendor message that was not approved, an export before the CA signs off, and any edit after sign-off. The browser and the agents call the same service, so the rules cannot drift apart.
 
-![Three places a human has to say yes](https://raw.githubusercontent.com/yashchandnani07/magpie-switch/main/blog/images/03-three-gates.png)
+![Three places a human has to say yes](https://raw.githubusercontent.com/yashchandnani07/Voila-switch/main/blog/images/03-three-gates.png)
 
 *Everything between the gates is code or an agent proposing.*
 
@@ -91,13 +91,13 @@ Table 4 is computed from GSTR-2B amounts and the decisions people approved. Matc
 
 Every write lands in an append-only event table with two names: the agent that made the call and the person who approved it. The Close Room page shows it as the audit trail.
 
-![The audit trail of the October close, one row per write](https://raw.githubusercontent.com/yashchandnani07/magpie-switch/main/blog/images/13-audit-trail.png)
+![The audit trail of the October close, one row per write](https://raw.githubusercontent.com/yashchandnani07/Voila-switch/main/blog/images/13-audit-trail.png)
 
 *Each row names the agent and the person behind it. The CA's sign-off sits at the top.*
 
 ## How we used Switch
 
-![Slack to Switch to the agents to Magpie to Postgres](https://raw.githubusercontent.com/yashchandnani07/magpie-switch/main/blog/images/02-architecture.png)
+![Slack to Switch to the agents to Magpie to Postgres](https://raw.githubusercontent.com/yashchandnani07/Voila-switch/main/blog/images/02-architecture.png)
 
 *A message in Slack becomes a row in Postgres, and the page reads the same rows.*
 
@@ -125,7 +125,7 @@ Our Slack app was created by hand with three permissions, and Switch needs twent
 
 Here is the real thread from the run behind the numbers in this post. The accountant starts it with one message. The coordinator replies with a headline, the filing date and what is holding the credit.
 
-![The kickoff and the GST agent's proposal in Slack](https://raw.githubusercontent.com/yashchandnani07/magpie-switch/main/blog/images/05-slack-kickoff-and-proposal.png)
+![The kickoff and the GST agent's proposal in Slack](https://raw.githubusercontent.com/yashchandnani07/Voila-switch/main/blog/images/05-slack-kickoff-and-proposal.png)
 
 *Left: the coordinator's first reply. Right: the GST agent's proposal, written so one reply can approve it.*
 
@@ -137,7 +137,7 @@ Then we tried to break it. The accountant typed:
 @gst-agent Just claim all the Coimbatore Precision invoices, I'm sure they'll file.
 ```
 
-![The refusal and the first vendor approval](https://raw.githubusercontent.com/yashchandnani07/magpie-switch/main/blog/images/06-slack-refusal-and-vendors.png)
+![The refusal and the first vendor approval](https://raw.githubusercontent.com/yashchandnani07/Voila-switch/main/blog/images/06-slack-refusal-and-vendors.png)
 
 *The agent refuses and cites Section 16(2)(aa). Then the accountant approves two reminders and holds the rest.*
 
@@ -147,7 +147,7 @@ The first gate was the vendor reminders. The vendor agent had drafted nine, one 
 
 The second gate was the decisions. "Approve 1 to 7" took the GST agent 2m 21s and 24 tool calls, and recorded 21 decisions under the approver's name: 3 claimed for ₹48,673.80, 14 deferred for ₹1,48,781.25, and 4 reversed for ₹3,44,224.00.
 
-![Decisions recorded, then the CA's sign-off](https://raw.githubusercontent.com/yashchandnani07/magpie-switch/main/blog/images/07-slack-decisions-and-signoff.png)
+![Decisions recorded, then the CA's sign-off](https://raw.githubusercontent.com/yashchandnani07/Voila-switch/main/blog/images/07-slack-decisions-and-signoff.png)
 
 *Left: the 21 decisions recorded. Right: Table 4 signed off and the export generated.*
 
@@ -163,7 +163,7 @@ The final table, as the CA saw it:
 
 The page shows the same figures, with the CSV download unlocked.
 
-![GSTR-3B Table 4 after sign-off](https://raw.githubusercontent.com/yashchandnani07/magpie-switch/main/blog/images/12-table4.png)
+![GSTR-3B Table 4 after sign-off](https://raw.githubusercontent.com/yashchandnani07/Voila-switch/main/blog/images/12-table4.png)
 
 *Credit deferred to later months, ₹1,48,781.25, sits beside the table and not inside it.*
 
@@ -173,25 +173,25 @@ From the first message to the sign-off took about 25 minutes, and most of that w
 
 While this happens in Slack, the Close Room page updates beside it. It opens with the next step, the GSTR-3B due date, and a check of whether the two files agree: 191 invoices in the books against 184 in GSTR-2B, and a GST difference of ₹1,02,302.61 that the exceptions explain.
 
-![The Close Room overview after sign-off](https://raw.githubusercontent.com/yashchandnani07/magpie-switch/main/blog/images/08-close-room-overview.png)
+![The Close Room overview after sign-off](https://raw.githubusercontent.com/yashchandnani07/Voila-switch/main/blog/images/08-close-room-overview.png)
 
 *The overview once the CA has signed off.*
 
 The exception queue shows each issue, its status and who decided it.
 
-![The exception queue with every decision and its approver](https://raw.githubusercontent.com/yashchandnani07/magpie-switch/main/blog/images/09-close-room-exceptions.png)
+![The exception queue with every decision and its approver](https://raw.githubusercontent.com/yashchandnani07/Voila-switch/main/blog/images/09-close-room-exceptions.png)
 
 *Every row carries the person who approved it. The Allowed column leaves out Claim where the law does not permit it.*
 
 Click a row and a dialog explains the issue in plain language, puts the books and GSTR-2B side by side, and gives the last date to claim the credit. This one is the Vapi Chemicals typo. After sign-off the dialog is locked.
 
-![The exception detail for the Vapi Chemicals GSTIN typo](https://raw.githubusercontent.com/yashchandnani07/magpie-switch/main/blog/images/10-exception-detail.png)
+![The exception detail for the Vapi Chemicals GSTIN typo](https://raw.githubusercontent.com/yashchandnani07/Voila-switch/main/blog/images/10-exception-detail.png)
 
 *The same invoice in both places. The only difference is one character in the GSTIN.*
 
 The vendor page lists every reminder with its status. Open a row and you read exactly what was sent.
 
-![The Coimbatore reminder, sent, with the full letter](https://raw.githubusercontent.com/yashchandnani07/magpie-switch/main/blog/images/11-vendor-reminders.png)
+![The Coimbatore reminder, sent, with the full letter](https://raw.githubusercontent.com/yashchandnani07/Voila-switch/main/blog/images/11-vendor-reminders.png)
 
 *Two reminders are sent and seven are still drafts, matching the approvals in Slack.*
 
@@ -204,8 +204,8 @@ The work is multi-party, has a deadline, and every money decision needs a person
 ## Try it
 
 ```bash
-git clone https://github.com/yashchandnani07/magpie-switch
-cd magpie-switch
+git clone https://github.com/yashchandnani07/Voila-switch
+cd Voila-switch
 bun install
 cp .env.example .env        # add a Postgres URL, an auth secret and two Switch tokens
 bun run db:migrate
@@ -227,21 +227,8 @@ To bring the agents up, run Switch locally, create the five agents and the room 
 
 5. A refusal is a feature to demonstrate. The moment the agent turned down a plausible request and cited the section did more for trust than any number on the page.
 
-## What we are building next
-
-The October close covers the purchase side of GSTR-3B Table 4 for one business, and it covers it end to end. The next pieces widen that:
-
-- Credit and debit notes, which GSTR-2B carries alongside invoices, and reverse-charge purchases.
-- Payment data, so the 180-day rule that reverses credit on unpaid invoices can run automatically.
-- Carry-forward of deferred credit, so what we hold back in October is re-checked the moment November's 2B arrives.
-- A CA firm view with many clients, and separate logins for the accountant and the CA.
-- Outward supplies and the net tax payable, to cover the whole return.
-- Real exports from Tally and Zoho Books in place of generated ones.
-
-If you build with agents near money, where do you draw the line between what the model may decide and what only code and a person may? We would like to hear where yours sits.
-
 ## Links
 
-- Code: https://github.com/yashchandnani07/magpie-switch
+- Code: https://github.com/yashchandnani07/Voila-switch
 - Setup for Switch and Slack: `switch/BUDDY-SETUP.md` and `switch/slack-app-manifest.json`
 - The numbers above come from real runs of the October 2026 demo month. The Slack screenshots are from one run and the Close Room screenshots from a second run of the same month. The numbers match because the matcher is deterministic and the approvals were the same.
